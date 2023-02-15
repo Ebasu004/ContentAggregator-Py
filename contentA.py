@@ -6,55 +6,34 @@ from bs4 import BeautifulSoup
 PT_ID = 0
 PT_CLASS = 1
 
-
-def getElementByID(URL, id):
-    page = requests.get(URL)
+def getElementByID(session, URL, id):
+    page = session.get(URL)
     soup = BeautifulSoup(page.content, 'html.parser')
     return soup.find(id=id)
 
 
-def getElementByClass(URL, elemClass):
-    page = requests.get(URL)
+def getElementByClass(session, URL, elemClass):
+    page = session.get(URL)
     soup = BeautifulSoup(page.content, 'html.parser')
-    return soup.find(class_=elemClass)
+    return soup.find_all(class_=elemClass)
 
 
-def getElements(URL, ptype, id):
-    """
-    Return a list of elements that match a certain criteria.
-
-    URL: String containing the url.
-    ptype: ---
-    ids: ---
-
-    Return: List containing elements found, or None if no elements are found.
-    """
+def getElements(session, URL, ptype, id):
     if ptype == PT_ID:
-        return getElementByID(URL, id)
+        return getElementByID(session, URL, id)
     elif ptype == PT_CLASS:
-        return getElementByClass(URL, id)
+        return getElementByClass(session, URL, id)
 
 
-for results in getElements("https://www.nbcnews.com/", PT_CLASS, "alacarte"):
-    title = results.find('div', class_='alacarte__text-wrapper')
-    link = results.find('a')['href']
+def processResult(result):
+    title = result.find('div', class_='alacarte__text-wrapper')
+    link = result.find('a')['href']
+    return (title.text.strip(), link)
 
-    print(title.text.strip())
-    print(link, '\n')
 
-# ---------------------------------------------------------------------------------
-# URL = 'https://www.nbcnews.com/'
-# page = requests.get(URL)
-
-# soup = BeautifulSoup(page.content, 'html.parser')
-
-# results = soup.find(class_='alacarte')
-
-# for top in results:
-#     desc = top.find('div', class_='alacarte__text-wrapper')
-#     link = top.find('a')['href']
-
-#     print(desc.text.strip())
-#     print(link,'\n')
-
-# ---------------------------------------------------------------------------------
+with requests.Session() as session:
+    results = getElements(session, "https://www.nbcnews.com/", PT_CLASS, "alacarte")
+    articleData = map(processResult, results)
+    for title, link in articleData:
+        print(title)
+        print(link, '\n')
